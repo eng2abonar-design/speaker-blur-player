@@ -12,14 +12,19 @@
   .wrap { max-width:900px; margin:0 auto; padding:12px; }
   .player { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:14px; overflow:hidden; }
   .player iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
-  #veil { position:absolute; left:0; right:0; top:0; bottom:22%; pointer-events:none;
-          backdrop-filter: blur(var(--b,30px)); -webkit-backdrop-filter: blur(var(--b,30px)); }
-  #veil.black { background:#000; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  #mask { position:absolute; top:0; bottom:20%; width:var(--w,55%); background:#23272e; pointer-events:none; }
+  #mask.left { left:0; }
+  #mask.right { right:0; }
+  #mask.off { display:none; }
   .card { background:var(--card); border-radius:16px; padding:14px; margin-top:12px; box-shadow:0 2px 10px rgba(20,40,70,.08); }
-  .levels { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  .levels button { padding:16px 4px; border:0; border-radius:12px; background:#e6ecf5; color:var(--ink); font-size:18px; font-weight:700; }
-  .levels button.on { background:var(--accent); color:#fff; }
-  .row { display:flex; gap:8px; margin-top:10px; }
+  .lbl { font-size:15px; color:var(--muted); margin:0 0 6px; }
+  .grp { display:grid; gap:8px; margin-bottom:12px; }
+  .g3 { grid-template-columns:repeat(3,1fr); }
+  .g3w { grid-template-columns:1fr 1.2fr 1fr; }
+  .grp button { padding:16px 4px; border:0; border-radius:12px; background:#e6ecf5; color:var(--ink); font-size:20px; font-weight:700; }
+  .grp button.on { background:var(--accent); color:#fff; }
+  #wv { display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; }
+  .row { display:flex; gap:8px; }
   input { flex:1; min-width:0; padding:12px; border:1px solid var(--line); border-radius:10px; font-size:16px; direction:ltr; }
   .go { padding:12px 18px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; }
   .hint { color:var(--muted); font-size:15px; line-height:1.7; margin:10px 0 0; }
@@ -27,20 +32,26 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="player" id="player"><div id="veil"></div></div>
+  <div class="player" id="player"><div id="mask" class="left"></div></div>
 
   <div class="card">
-    <div class="levels" id="levels">
-      <button data-m="0">بدون</button>
-      <button data-m="15">خفيف</button>
-      <button data-m="30" class="on">قوي</button>
-      <button data-m="b">أسود</button>
+    <p class="lbl">جهة صورة المتحدث</p>
+    <div class="grp g3" id="side">
+      <button data-s="left" class="on">يسار</button>
+      <button data-s="right">يمين</button>
+      <button data-s="off">بدون غطاء</button>
     </div>
-    <p class="hint">الطمس على الفيديو كله، فمكان المتحدث ما بيفرقش. الشريط السفلي (الترجمة وأزرار التشغيل) بيفضل واضح. اضغط على الفيديو مرة لبدء التشغيل.</p>
+    <p class="lbl">عرض الغطاء</p>
+    <div class="grp g3w">
+      <button id="minus">−</button>
+      <div id="wv">55%</div>
+      <button id="plus">+</button>
+    </div>
     <div class="row">
       <input id="url" type="text" placeholder="رابط يوتيوب">
       <button class="go" id="go">تشغيل</button>
     </div>
+    <p class="hint">الغطاء بيخفي جانب المتحدث، والكلام الإنجليزي على الجانب التاني بيفضل واضح. الترجمة والأزرار في الشريط السفلي بتفضل ظاهرة. اضغط على الفيديو مرة لبدء التشغيل. لو لسه ظاهر جزء من الصورة، كبّر العرض بزرار +.</p>
   </div>
 </div>
 
@@ -48,8 +59,9 @@
 (function () {
   var DEFAULT = 'https://www.youtube.com/watch?v=y5kl9MU1urc&t=3472s';
   var player = document.getElementById('player');
-  var veil = document.getElementById('veil');
+  var mask = document.getElementById('mask');
   var urlBox = document.getElementById('url');
+  var st = { s: 'left', w: 55 };
 
   function parse(u) {
     var id = null, start = 0, m;
@@ -69,28 +81,28 @@
     f.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
     f.allowFullscreen = true;
     f.referrerPolicy = 'strict-origin-when-cross-origin';
-    player.insertBefore(f, veil);
+    player.insertBefore(f, mask);
   }
-  function setMode(m) {
-    veil.classList.remove('black'); veil.style.removeProperty('--b');
-    if (m === 'b') veil.classList.add('black');
-    else if (m === '0') veil.style.display = 'none';
-    if (m !== '0') veil.style.display = '';
-    if (m !== 'b' && m !== '0') veil.style.setProperty('--b', m + 'px');
-    [].forEach.call(document.querySelectorAll('#levels button'), function (b) { b.classList.toggle('on', b.dataset.m === m); });
-    try { localStorage.setItem('ysm-mode', m); } catch (e) {}
+  function render() {
+    mask.className = st.s;
+    mask.style.setProperty('--w', st.w + '%');
+    document.getElementById('wv').textContent = st.w + '%';
+    [].forEach.call(document.querySelectorAll('#side button'), function (b) { b.classList.toggle('on', b.dataset.s === st.s); });
+    try { localStorage.setItem('ysm-v2', JSON.stringify(st)); } catch (e) {}
   }
 
-  document.getElementById('levels').addEventListener('click', function (e) {
-    if (e.target.dataset && e.target.dataset.m) setMode(e.target.dataset.m);
+  document.getElementById('side').addEventListener('click', function (e) {
+    if (e.target.dataset && e.target.dataset.s) { st.s = e.target.dataset.s; render(); }
   });
+  document.getElementById('minus').onclick = function () { st.w = Math.max(20, st.w - 5); render(); };
+  document.getElementById('plus').onclick = function () { st.w = Math.min(85, st.w + 5); render(); };
   document.getElementById('go').onclick = function () { load(urlBox.value.trim()); };
 
+  try { var d = JSON.parse(localStorage.getItem('ysm-v2') || 'null'); if (d && d.s && d.w) st = d; } catch (e) {}
   var q = new URLSearchParams(location.search);
-  var mode = '30';
-  try { mode = localStorage.getItem('ysm-mode') || '30'; } catch (e) {}
-  if (q.get('m')) mode = q.get('m');
-  setMode(mode);
+  if (q.get('s')) st.s = q.get('s');
+  if (q.get('w')) st.w = +q.get('w') || st.w;
+  render();
   load(q.get('u') || DEFAULT);
 })();
 </script>
