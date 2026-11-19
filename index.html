@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>مشغّل بدون صورة المتحدث</title>
+<style>
+  :root { --bg:#eef2f7; --card:#fff; --ink:#1d2733; --muted:#5b6b7c; --accent:#2563eb; --line:#d8e0ea; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",Tahoma,Arial,sans-serif; font-size:18px; }
+  .wrap { max-width:900px; margin:0 auto; padding:12px; }
+  .player { position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:14px; overflow:hidden; }
+  .player iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  #veil { position:absolute; left:0; right:0; top:0; bottom:22%; pointer-events:none;
+          backdrop-filter: blur(var(--b,30px)); -webkit-backdrop-filter: blur(var(--b,30px)); }
+  #veil.black { background:#000; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .card { background:var(--card); border-radius:16px; padding:14px; margin-top:12px; box-shadow:0 2px 10px rgba(20,40,70,.08); }
+  .levels { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .levels button { padding:16px 4px; border:0; border-radius:12px; background:#e6ecf5; color:var(--ink); font-size:18px; font-weight:700; }
+  .levels button.on { background:var(--accent); color:#fff; }
+  .row { display:flex; gap:8px; margin-top:10px; }
+  input { flex:1; min-width:0; padding:12px; border:1px solid var(--line); border-radius:10px; font-size:16px; direction:ltr; }
+  .go { padding:12px 18px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; }
+  .hint { color:var(--muted); font-size:15px; line-height:1.7; margin:10px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="player" id="player"><div id="veil"></div></div>
+
+  <div class="card">
+    <div class="levels" id="levels">
+      <button data-m="0">بدون</button>
+      <button data-m="15">خفيف</button>
+      <button data-m="30" class="on">قوي</button>
+      <button data-m="b">أسود</button>
+    </div>
+    <p class="hint">الطمس على الفيديو كله، فمكان المتحدث ما بيفرقش. الشريط السفلي (الترجمة وأزرار التشغيل) بيفضل واضح. اضغط على الفيديو مرة لبدء التشغيل.</p>
+    <div class="row">
+      <input id="url" type="text" placeholder="رابط يوتيوب">
+      <button class="go" id="go">تشغيل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var DEFAULT = 'https://www.youtube.com/watch?v=y5kl9MU1urc&t=3472s';
+  var player = document.getElementById('player');
+  var veil = document.getElementById('veil');
+  var urlBox = document.getElementById('url');
+
+  function parse(u) {
+    var id = null, start = 0, m;
+    m = u.match(/[?&]v=([\w-]{11})/) || u.match(/youtu\.be\/([\w-]{11})/) || u.match(/embed\/([\w-]{11})/) || u.match(/^([\w-]{11})$/);
+    if (m) id = m[1];
+    m = u.match(/[?&#]t=(?:(\d+)h)?(?:(\d+)m)?(\d+)?s?/);
+    if (m) start = (+m[1] || 0) * 3600 + (+m[2] || 0) * 60 + (+m[3] || 0);
+    return { id: id, start: start };
+  }
+  function load(u) {
+    var p = parse(u);
+    if (!p.id) { urlBox.value = ''; urlBox.placeholder = 'الرابط غير صحيح'; return; }
+    urlBox.value = u;
+    var old = player.querySelector('iframe'); if (old) old.remove();
+    var f = document.createElement('iframe');
+    f.src = 'https://www.youtube.com/embed/' + p.id + '?start=' + p.start + '&rel=0&playsinline=1&cc_load_policy=1&cc_lang_pref=en&hl=en';
+    f.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
+    f.allowFullscreen = true;
+    f.referrerPolicy = 'strict-origin-when-cross-origin';
+    player.insertBefore(f, veil);
+  }
+  function setMode(m) {
+    veil.classList.remove('black'); veil.style.removeProperty('--b');
+    if (m === 'b') veil.classList.add('black');
+    else if (m === '0') veil.style.display = 'none';
+    if (m !== '0') veil.style.display = '';
+    if (m !== 'b' && m !== '0') veil.style.setProperty('--b', m + 'px');
+    [].forEach.call(document.querySelectorAll('#levels button'), function (b) { b.classList.toggle('on', b.dataset.m === m); });
+    try { localStorage.setItem('ysm-mode', m); } catch (e) {}
+  }
+
+  document.getElementById('levels').addEventListener('click', function (e) {
+    if (e.target.dataset && e.target.dataset.m) setMode(e.target.dataset.m);
+  });
+  document.getElementById('go').onclick = function () { load(urlBox.value.trim()); };
+
+  var q = new URLSearchParams(location.search);
+  var mode = '30';
+  try { mode = localStorage.getItem('ysm-mode') || '30'; } catch (e) {}
+  if (q.get('m')) mode = q.get('m');
+  setMode(mode);
+  load(q.get('u') || DEFAULT);
+})();
+</script>
+</body>
+</html>
