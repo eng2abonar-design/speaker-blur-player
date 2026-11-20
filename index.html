@@ -66,7 +66,9 @@ var D = [[1,"THE",49,[[71,"the most"],[81,"the other"],[95,"The cat."]]],[2,"BE"
 
   var player = null, ready = false, playing = false, wantPlay = false, curCard = -1, curSent = null, lastSave = 0;
 
+  var want = null, tries = 0;
   function seek(t) {
+    want = t; tries = 0;
     if (ready) { player.seekTo(t, true); player.playVideo(); }
     else { START = t; wantPlay = true; }
     mark(t, true);
@@ -103,6 +105,7 @@ var D = [[1,"THE",49,[[71,"the most"],[81,"the other"],[95,"The cat."]]],[2,"BE"
   };
 
   try { var sv = parseFloat(localStorage.getItem('rw-t')); if (sv > 0) START = sv; } catch (e) {}
+  want = START;
   mark(START, false);
   var c0 = cards[curCard]; if (c0) c0.el.scrollIntoView({ block: 'start' });
 
@@ -121,10 +124,15 @@ var D = [[1,"THE",49,[[71,"the most"],[81,"the other"],[95,"The cat."]]],[2,"BE"
   document.head.appendChild(s);
 
   setInterval(function () {
-    if (ready && player && player.getCurrentTime) {
-      var t = player.getCurrentTime(); mark(t, true);
-      if (playing && Date.now() - lastSave > 3000) { lastSave = Date.now(); try { localStorage.setItem('rw-t', String(Math.max(0, t - 2))); } catch (e) {} }
+    if (!(ready && player && player.getCurrentTime)) return;
+    var t = player.getCurrentTime();
+    if (want !== null) {
+      // لسه ما وصلناش للمكان المطلوب (مثلاً إعلان بيشتغل): نعيد القفز لحد ما ينجح
+      if (playing && Math.abs(t - want) <= 4) { want = null; }
+      else { mark(want, true); if (playing && (++tries % 3 === 0)) player.seekTo(want, true); return; }
     }
+    mark(t, true);
+    if (playing && Date.now() - lastSave > 3000) { lastSave = Date.now(); try { localStorage.setItem('rw-t', String(Math.max(0, t - 2))); } catch (e) {} }
   }, 400);
 })();
 </script>
