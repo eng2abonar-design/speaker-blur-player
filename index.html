@@ -1,1 +1,132 @@
-https://github.com/eng2abonar-design/speaker-blur-player/edit/main/index.html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كلمات راشيل: صوت ونص</title>
+<style>
+  :root { --bg:#eef2f7; --card:#fff; --ink:#1d2733; --dim:#6b7a8a; --accent:#2563eb; --hl:#e3edff; }
+  * { box-sizing: border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",Tahoma,Arial,sans-serif; display:flex; flex-direction:column; }
+  #list { flex:1; overflow-y:auto; padding:12px 12px 24px; direction:ltr; text-align:left; -webkit-overflow-scrolling:touch; }
+  .card { background:var(--card); border-radius:16px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 6px rgba(20,40,70,.08); }
+  .card.on { outline:3px solid var(--accent); }
+  .w { display:flex; align-items:baseline; gap:10px; cursor:pointer; }
+  .n { font-size:15px; color:var(--dim); min-width:34px; }
+  .t { font-size:30px; font-weight:800; }
+  .bonus { font-size:13px; color:var(--dim); margin:18px 4px 8px; direction:rtl; text-align:right; }
+  .s { margin:6px 0 0; padding:8px 10px; border-radius:10px; font-size:23px; line-height:1.4; color:#33414f; cursor:pointer; }
+  .s.on { background:var(--hl); font-weight:600; color:var(--ink); }
+  .dock { flex:none; display:flex; align-items:center; gap:12px; padding:8px 12px; background:var(--card); border-radius:16px 16px 0 0; box-shadow:0 -2px 10px rgba(20,40,70,.1); }
+  #pwrap { flex:none; position:relative; width:200px; height:200px; border-radius:12px; overflow:hidden; background:#23272e; }
+  #cover { position:absolute; inset:0; z-index:2; background:#23272e; color:#aab4c0; display:flex; align-items:center; justify-content:center; font-size:15px; text-align:center; }
+  #pwrap iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  #play { width:100%; height:96px; border:0; border-radius:20px; background:var(--accent); color:#fff; font-size:44px; }
+  #state { display:block; font-size:15px; color:#5b6b7c; text-align:center; margin-top:6px; }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<div class="dock">
+  <div id="pwrap"><div id="cover">صوت فقط</div><div id="yt"></div></div>
+  <div style="flex:1"><button id="play" aria-label="تشغيل">▶</button><span id="state">جاري التحميل…</span></div>
+</div>
+
+<script>
+var START = 3472;
+var D = [[1,"THE",49,[[71,"the most"],[81,"the other"],[95,"The cat."]]],[2,"BE",106,[[112,"I am, you are, he is, she is, it is, we are, they are."],[133,"M'sorry."],[154,"You're gonna be okay."],[187,"'Ts cool. 'Ts raining."],[195,"We're running late."],[210,"They're okay."]]],[3,"TO",217,[[237,"Let's go to the beach."],[352,"I know how to do it."]]],[4,"OF",254,[[273,"kind of, sort of"],[280,"I'm kinda tired."],[313,"I'm running late."]]],[5,"AND",372,[[412,"An' I think it will be okay."],[428,"N' I think it will be okay."],[440,"Cookies and cream, salt and pepper, black and white, up and down, left and right."]]],[6,"A / AN",457,[[476,"A coffee."],[476,"An example."]]],[7,"IN",488,[[506,"He's in love."],[506,"She's in a hurry."]]],[8,"THAT",519,[[563,"That I"],[571,"That she"]]],[9,"HAVE",597,[[609,"I've been wanting to see that."],[626,"He's been waiting."],[642,"It's been raining"]]],[10,"I",669,[[669,"I think so."]]],[11,"IT",741,[[763,"It won't be."],[779,"It always"]]],[12,"FOR",799,[[846,"This is for work."],[854,"I got it for my birthday."],[859,"What's for dinner?"]]],[13,"NOT",868,[[872,"Didn't, doesn't, can't, shouldn't, won't"],[901,"I do NOT want to see her right now."]]],[14,"ON",925,[[938,"Put it on the table."]]],[15,"WITH",992,[[1030,"It's with the other one."]]],[16,"HE",1053,[[1080,"What does he want?"]]],[17,"AS",1120,[[1133,"He's as tall as me."]]],[18,"YOU",1160,[[1160,"What are you doing?"]]],[19,"DO",1201,[[1220,"What do you think?"]]],[20,"AT",1261,[[1293,"She's at school."]]],[21,"THIS",1313,[[1318,"This is what I'm talking about."],[1330,"Not that one, this one."]]],[22,"BUT",1342,[[1351,"I wanted to stop in, but I was already running late."],[1378,"We wanted to stop by, but we were already running late."]]],[23,"HIS",1394,[[1400,"What's his name?"]]],[24,"BY",1438,[[1440,"We'll be right by the door."]]],[25,"FROM",1456,[[1486,"I'll be back from work at three."]]],[26,"THEY",1511,[[1521,"They already left."]]],[27,"WE",1549,[[1563,"We already left."]]],[28,"SAY",1577,[[1608,"What did he say? He said he's running late."]]],[29,"HER",1638,[[1647,"What's her name?"]]],[30,"SHE",1670,[[1680,"We don't think she knows."],[1695,"I don't think she knows."]]],[31,"OR",1704,[[1773,"Would you like white or brown rice?"],[1806,"I'm leaving Monday or Tuesday."]]],[32,"AN",1844,[[476,"An example."]]],[33,"WILL",1854,[[1871,"I'll like fishing when I learn more about it."],[1926,"He'll be coming by at three."],[1934,"She'll have the report ready soon."],[1962,"The dog'll need to be walked soon."],[1977,"Tuesday'll be better."],[1977,"John'll be here soon."],[2021,"We'll be late."],[2025,"They'll be hungry when they get here."],[2043,"The kids'll be tired."]]],[34,"MY",2051,[[2064,"This is my boyfriend. My shirt's too big."],[2078,"Oh my!"]]],[35,"ONE",2092,[[2113,"We're looking for one teacher to join our team."],[2118,"I need a new phone, this one's going to die."],[2131,"This one's going to last longer, but that one's cheaper."]]],[36,"ALL",2166,[[2174,"Did you eat all the cake?"],[2180,"We've been having all sorts of problems."]]],[37,"WOULD / COULD / SHOULD",2227,[[2319,"Should we get dinner?"],[2359,"Should we call her?"],[2369,"I should go."],[2387,"Should I say that? Should I try it?"],[2397,"Should I call him?"],[2422,"Could we try later?"],[2438,"Could I come back later?"],[2451,"Would we want to do that?"],[2458,"Where would I go?"]]],[38,"THERE",2478,[[2544,"There's a good reason why I can't tell you."],[2575,"There're lots of reasons."]]],[39,"THEY'RE",2486,[[2587,"They're in the kitchen."]]],[40,"WHAT",2595,[[2610,"What are you going to do?"],[2619,"What were you thinking?"],[2646,"What do you think?"],[2652,"What did you say?"]]],[41,"SO",2669,[[2686,"I don't think so."],[2686,"Your hair looks so good."],[2709,"So what do you think?"],[2715,"So you're going to need another one."]]],[42,"UP",2715,[[2767,"What's up?"],[2773,"What's up, Mom?"],[2803,"Crack up, break up, throw up, act up, creep up, butter up, burn up, bone up."]]],[43,"OUT",2829,[[2837,"Work out, figure out, burn out, black out, block out, stand out, bring out."],[2878,"Watch out!"],[2893,"You can't back out now."],[2923,"Get out of here."]]],[44,"IF",2948,[[2957,"Call me if you get lost."],[2982,"If you wanna leave, that's okay. If she doesn't care, that's okay."]]],[45,"ABOUT",2999,[[3010,"I was out and about and thought I'd stop by."],[3023,"It's all about the timing."],[3064,"How bout now?"]]],[46,"WHO",3081,[[3095,"Who was that? Who does she think she is?"],[3119,"Anyone who wants to come can come."]]],[47,"GET",3137,[[3196,"I'll get the biggest one."],[3208,"I don't get it."]]],[48,"WHICH",3215,[[3235,"Which do you want?"],[3244,"The movie, which I saw last night, was terrible."]]],[49,"GO",3331,[[3382,"I'm going to go to the store. I'm going to go to the mall."],[3410,"I'm gonna go."],[3492,"You're gonna hear it."]]],[50,"ME",3492,[[3522,"He gave me his number."]]],[51,"WHEN",3554,[[3626,"When are you going to stop by?"],[3638,"It was better when we were kids."]]],[52,"MAKE",3663,[[3718,"I'll make you one."],[3718,"It would make things easier."]]],[53,"CAN",3726,[[3734,"Who can help tomorrow? I can."],[3734,"A can of soup."],[3791,"I can see you."]]],[54,"LIKE",3802,[[3826,"I don't like it."],[3847,"He acted like nothing happened."],[3886,"Yesterday I saw Jim walking home from school, and I was like, \"Do you need a ride?\""],[3891,"And he was like, \"No, I'm just going to walk.\""]]],[55,"TIME",3901,[[3965,"What time is it?"],[3965,"You do sit ups for a minute, and I'll time you."]]],[56,"NO",3979,[[4006,"I have no idea."],[4006,"He voted 'no' on the sugar tax."]]],[57,"JUST",4012,[[4070,"I just thought, why not?"],[4087,"I just missed the bus."],[4118,"It's just Alex."]]],[58,"HIM",4127,[[4151,"I gave him another one."],[4169,"We want him to succeed."]]],[59,"KNOW",4185,[[4235,"I don't know. / I dunno."]]],[60,"TAKE",4261,[[4281,"Can you take me there?"],[4290,"I need to take it back."]]],[61,"PEOPLE",4304,[[4430,"I'm a people person."],[4450,"I have room for three more people in my car."]]],[62,"INTO",4460,[[4475,"I ran into my teacher at the movies."]]],[63,"YEAR",4572,[[4801,"We're going to Italy this year."],[4833,"What year were you born?"]]],[64,"YOUR",4846,[[4887,"What's your name?"],[4891,"Can I borrow your car?"]]],[65,"GOOD",4944,[[5053,"I feel good about the project."],[5068,"It's a good restaurant."]]],[66,"SOME",5077,[[5087,"That was some party!"],[5098,"Some days I work from home, and some days I go to the office."],[5139,"May I have some water?"],[5139,"We need some more volunteers."]]],[67,"COULD",5155,[[2422,"Could we try later?"]]],[68,"THEM",5161,[[5195,"We gave them the tickets."],[5195,"We gave 'em money."]]],[69,"SEE",5241,[[5287,"I didn't see you there."],[5294,"The CEO asked to see me."]]],[70,"OTHER",5294,[[5308,"I don't love it, on the other hand, it is cheaper."],[5320,"I read about that just the other day."],[5328,"Someone or other will help out."]]],[71,"THAN",5370,[[5448,"She's taller than I am."],[5457,"They're older than we are."]]],[72,"THEN",5477,[[5485,"It got really dark, then it stormed all night."],[5493,"If we go grocery shopping, then we can cook dinner."],[5554,"And then it stormed all night."]]],[73,"NOW",5583,[]],[74,"LOOK",5637,[[5649,"Look at me!"],[5656,"She gave me a look."]]],[75,"ONLY",5700,[[5812,"You're the only one."],[5812,"If only it were true."]]],[76,"COME",5812,[[5831,"Why don't you come over for dinner?"],[5839,"Come by later."],[5853,"Come on over."]]],[77,"ITS",5853,[[5872,"Where's the remote? It's in its usual place."],[5888,"It's gone."],[5928,"The watch is in its case."]]],[78,"OVER",5934,[[5995,"We jumped over the creek."],[6011,"We traveled all over Italy."]]],[79,"THINK",6021,[]],[80,"ALSO",6170,[[6179,"I also want to get coffee."],[6179,"That was also a problem."]]],[81,"BACK",6235,[[6246,"Please step back."],[6246,"It was moving back and forth."]]],[82,"AFTER",6283,[[6309,"It's raining so we can't go to the beach. Well, let's go to the movies. After all, I already took the day off."],[6397,"He left after everyone went to bed."],[6404,"Let's leave after dinner."]]],[83,"USE",6432,[[6519,"What's the use?"],[6519,"I'll use it later."]]],[84,"TWO",6532,[[6553,"I like it too."],[6612,"The game is at two thirty."]]],[85,"HOW",6612,[[6638,"How did it go? How tall are you? How hungry are you?"]]],[86,"OUR",6691,[[6750,"What time is our meeting?"],[6792,"It's our son's birthday tomorrow."]]],[87,"WORK",6814,[[6926,"We'll work it out."],[6926,"She doesn't work Mondays."]]],[88,"FIRST",6934,[[7013,"First, I want to try this."],[7020,"First, John wants to try this."]]],[89,"WELL",7058,[[7078,"Things are going well. I wish him well. All is well."],[7111,"Well, I want to leave by 7:00."],[7150,"Well, that's not what she said."]]],[90,"WAY",7154,[[7211,"Get out of the way."],[7223,"We need to find a way to solve this problem."],[7223,"You've come a long way."]]],[91,"EVEN",7232,[[7322,"I didn't make much money, but I did break even."],[7322,"Even numbers can be divided by two."],[7331,"This one's even better."],[7373,"I don't even know what to do."]]],[92,"NEW",7428,[[7491,"There's a new idea."],[7491,"I lost my new camera."],[7491,"She has a new book coming out."]]],[93,"WANT",7497,[[7550,"We want him to succeed."],[7573,"I want everyone to be there."],[7580,"We want her to do better."],[7596,"I want another one."],[7636,"I want that."],[7643,"I want this one."],[7688,"I don't want that."],[7710,"I know, they wanna see you."]]],[94,"BECAUSE",7724,[[7790,"We're late 'cuz' there was a traffic jam."],[7809,"They're staying home 'cuz' of the storm."],[7809,"She's grounded 'cuz' of her grades."]]],[95,"ANY",7824,[[7846,"Any kid would love that."],[7856,"At any rate, that's a good deal."],[7865,"Do you feel any better?"],[7892,"Do you have any money?"],[7896,"Do you have any time?"]]],[96,"THESE",7918,[[8016,"Everyone wants one of these."],[8024,"We need these to be cut in half."],[8035,"These are great."],[8035,"These people need help."]]],[97,"GIVE",8041,[[8062,"I'll give you that for your birthday."],[8070,"We're going to give her a discount."],[8084,"Gimme that."],[8103,"Can you gimme more time?"]]],[98,"DAY",8139,[[8180,"I need another day to finish."],[8187,"What day is he coming back?"],[8187,"Let's call it a day."]]],[99,"MOST",8209,[[8241,"Most people like it."],[8241,"It's the most challenging part."],[8268,"I got most of the questions right."]]],[100,"US",8297,[[8303,"They took us to the movies."],[8311,"They gave it to us for our anniversary."],[8332,"This belongs to us."]]],[101,"MORE",8462,[]],[102,"VERY",8515,[[8526,"I'm very tired."]]],[103,"FIND",8595,[[8620,"I found my book."],[8631,"find out"]]],[104,"WHERE",8657,[]],[105,"THING",8704,[[8767,"something, nothing, anything, everything"]]],[106,"SHOULD",8786,[[8798,"Should we try?"]]],[107,"NEED",8819,[[8862,"I need my other one."]]],[108,"MUCH",8872,[]],[109,"RIGHT",8891,[[8893,"Let's get this right."],[8908,"That's right."],[8908,"right now"],[8913,"right away"]]],[110,"MEAN",8936,[[8969,"I meant that."]]],[111,"MAY",8978,[]],[112,"HERE",8998,[]],[113,"MANY",9049,[[9049,"Many people want to meet you there."],[9057,"How many people will be there?"]]],[114,"SUCH",9082,[[9088,"Online schools such as Rachel's English Academy are such a great way to learn."]]]];
+(function () {
+  var VID = 'y5kl9MU1urc';
+  var list = document.getElementById('list');
+  var cards = [], sents = [];
+  var bonusAdded = false;
+  D.forEach(function (c) {
+    if (c[0] > 100 && !bonusAdded) {
+      bonusAdded = true;
+      var b = document.createElement('div'); b.className = 'bonus'; b.textContent = 'كلمات إضافية في آخر الفيديو';
+      list.appendChild(b);
+    }
+    var el = document.createElement('div'); el.className = 'card';
+    var w = document.createElement('div'); w.className = 'w';
+    var n = document.createElement('span'); n.className = 'n'; n.textContent = c[0] > 100 ? '+' : '#' + c[0];
+    var t = document.createElement('span'); t.className = 't'; t.textContent = c[1];
+    w.appendChild(n); w.appendChild(t); el.appendChild(w);
+    var card = { t: c[2], el: el };
+    w.onclick = function () { seek(card.t); };
+    c[3].forEach(function (s) {
+      var se = document.createElement('div'); se.className = 's'; se.textContent = s[1];
+      se.onclick = function () { seek(s[0]); };
+      el.appendChild(se);
+      sents.push({ t: s[0], el: se });
+    });
+    list.appendChild(el);
+    cards.push(card);
+  });
+
+  var player = null, ready = false, playing = false, wantPlay = false, curCard = -1, curSent = null, lastSave = 0;
+
+  function seek(t) {
+    if (ready) { player.seekTo(t, true); player.playVideo(); }
+    else { START = t; wantPlay = true; }
+    mark(t, true);
+  }
+  function mark(t, scroll) {
+    var ci = -1;
+    for (var i = 0; i < cards.length; i++) { if (cards[i].t <= t) ci = i; }
+    if (ci !== curCard) {
+      if (curCard >= 0) cards[curCard].el.classList.remove('on');
+      curCard = ci;
+      if (ci >= 0) {
+        cards[ci].el.classList.add('on');
+        if (scroll !== false) cards[ci].el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    }
+    var best = null;
+    for (var j = 0; j < sents.length; j++) {
+      if (sents[j].t <= t && t - sents[j].t < 7) { if (!best || sents[j].t > best.t) best = sents[j]; }
+    }
+    if (best !== curSent) {
+      if (curSent) curSent.el.classList.remove('on');
+      curSent = best;
+      if (best) best.el.classList.add('on');
+    }
+  }
+  function setBtn(p) {
+    playing = p;
+    document.getElementById('play').textContent = p ? '❚❚' : '▶';
+    document.getElementById('state').textContent = p ? 'شغّال' : 'واقف';
+  }
+  document.getElementById('play').onclick = function () {
+    if (!ready) { wantPlay = true; document.getElementById('state').textContent = 'جاري التحميل… هيبدأ أول ما يجهز'; return; }
+    if (playing) player.pauseVideo(); else player.playVideo();
+  };
+
+  try { var sv = parseFloat(localStorage.getItem('rw-t')); if (sv > 0) START = sv; } catch (e) {}
+  mark(START, false);
+  var c0 = cards[curCard]; if (c0) c0.el.scrollIntoView({ block: 'start' });
+
+  window.onYouTubeIframeAPIReady = function () {
+    player = window.ytp = new YT.Player('yt', {
+      width: '200', height: '200', videoId: VID,
+      playerVars: { start: Math.floor(START), playsinline: 1, controls: 0, rel: 0, modestbranding: 1, cc_load_policy: 0, disablekb: 1 },
+      events: {
+        onReady: function () { ready = true; document.getElementById('state').textContent = 'اضغط تشغيل'; if (wantPlay) { player.seekTo(START, true); player.playVideo(); } },
+        onStateChange: function (e) { setBtn(e.data === 1 || e.data === 3); }
+      }
+    });
+  };
+  var s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api';
+  s.onerror = function () { document.getElementById('state').textContent = 'تعذّر تحميل المشغّل. تأكد من الإنترنت'; };
+  document.head.appendChild(s);
+
+  setInterval(function () {
+    if (ready && player && player.getCurrentTime) {
+      var t = player.getCurrentTime(); mark(t, true);
+      if (playing && Date.now() - lastSave > 3000) { lastSave = Date.now(); try { localStorage.setItem('rw-t', String(Math.max(0, t - 2))); } catch (e) {} }
+    }
+  }, 400);
+})();
+</script>
+</body>
+</html>
